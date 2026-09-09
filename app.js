@@ -23,7 +23,10 @@ const PAYDUNYA_CONFIG = {
 };
 // ───────────────────────────────────────────────────────────
 
-firebase.initializeApp(window.firebaseConfig ?? firebaseConfig);
+// Initialisation Firebase (évite la double initialisation)
+if (!firebase.apps.length) {
+  firebase.initializeApp(firebaseConfig);
+}
 const db = firebase.firestore();
 
 // ── Utilitaires ──────────────────────────────────────────
@@ -431,3 +434,4 @@ function ouvrirDevisWhatsApp() {
 }
 // Exposer globalement pour le bouton onclick dans le HTML
 window.ouvrirDevisWhatsApp = ouvrirDevisWhatsApp;
+  
