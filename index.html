@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Nid Gourmand — pâtisseries, gâteaux et douceurs artisanales.">
+  <title>Nid Gourmand — Pâtisserie artisanale</title>
+  <link rel="icon" id="faviconLink" href="assets/logo.png">
+  <link rel="apple-touch-icon" id="appleTouchIcon" href="assets/logo.png">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    /* ═══════════════════════════════════════════
+       MODALE PAIEMENT
+    ═══════════════════════════════════════════ */
+    #pay-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(4px)}
+    #pay-overlay.open{display:flex}
+    #pay-modal{background:#fff;border-radius:20px;padding:28px 22px;width:100%;max-width:400px;max-height:90vh;overflow-y:auto;position:relative;box-shadow:0 20px 60px rgba(0,0,0,.25);animation:slideUp .25s ease}
+    @keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+    #pay-close{position:absolute;top:12px;right:14px;background:none;border:none;font-size:18px;cursor:pointer;color:#888;padding:4px 8px;border-radius:6px}
+    #pay-close:hover{background:#f0f0f0}
+    .pay-header{text-align:center;margin-bottom:20px}
+    .pay-header .pay-icon{font-size:34px;display:block;margin-bottom:8px}
+    .pay-header h2{font-size:1.1rem;color:#1a1a1a;margin:0 0 5px}
+    .pay-amount{font-size:1.2rem;font-weight:800;color:#c0392b;margin:0}
+    .pay-methods{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:4px}
+    .pay-method-btn{border:2px solid #e8e8e8;border-radius:14px;padding:16px 10px;background:#fafafa;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px;transition:border-color .2s,background .2s,transform .15s}
+    .pay-method-btn:hover{border-color:#f4a136;background:#fffaf2;transform:translateY(-2px)}
+    .pay-method-btn .m-logo{font-size:26px}
+    .pay-method-btn .m-name{font-weight:700;font-size:.9rem;color:#1a1a1a}
+    .pay-method-btn .m-desc{font-size:.72rem;color:#999}
+    #pay-form{display:none}
+    .pay-badge{display:inline-block;background:#fff4e0;border:1px solid #f4a136;color:#b8750a;border-radius:20px;padding:5px 14px;font-size:.82rem;font-weight:700;margin:4px 0 14px}
+    #pay-form label{display:block;font-weight:700;font-size:.85rem;color:#333;margin:12px 0 5px}
+    #pay-phone{width:100%;padding:12px 14px;border:2px solid #e0e0e0;border-radius:10px;font-size:1rem;outline:none;transition:border-color .2s;box-sizing:border-box}
+    #pay-phone:focus{border-color:#f4a136}
+    .pay-hint{font-size:.75rem;color:#aaa;margin:3px 0 0}
+    #pay-confirm-btn{width:100%;margin-top:16px;padding:14px;background:linear-gradient(135deg,#f4a136,#e8841a);color:#fff;border:none;border-radius:12px;font-size:1rem;font-weight:800;cursor:pointer;transition:opacity .2s}
+    #pay-confirm-btn:disabled{opacity:.6;cursor:not-allowed}
+    #pay-back-btn{width:100%;margin-top:8px;padding:9px;background:none;border:none;color:#999;cursor:pointer;font-size:.85rem}
+    #pay-back-btn:hover{color:#555}
+    #pay-success{display:none;text-align:center;padding:10px 0}
+    #pay-success .s-icon{font-size:50px;margin-bottom:10px}
+    #pay-success h3{color:#27ae60;font-size:1.2rem;margin:0 0 8px}
+    #pay-success p{color:#555;font-size:.88rem;margin:0 0 6px}
+    #pay-success small{color:#bbb;font-size:.75rem}
+    #pay-success-close{margin-top:16px;padding:11px 28px;background:#27ae60;color:#fff;border:none;border-radius:10px;font-size:.95rem;cursor:pointer}
+    #pay-error{display:none;text-align:center;padding:10px 0}
+    #pay-error .e-icon{font-size:50px;margin-bottom:10px}
+    #pay-error h3{color:#e74c3c;font-size:1.1rem;margin:0 0 8px}
+    #pay-error p{color:#666;font-size:.88rem;margin:0 0 14px}
+    #pay-error-retry{padding:11px 28px;background:#e74c3c;color:#fff;border:none;border-radius:10px;font-size:.95rem;cursor:pointer}
+    #pay-loader{display:none;text-align:center;padding:20px 0}
+    #pay-loader p{color:#888;font-size:.9rem;margin-top:12px}
+    .spinner{width:36px;height:36px;border:4px solid #f0e8df;border-top-color:#f4a136;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto}
+    @keyframes spin{to{transform:rotate(360deg)}}
+  </style>
+</head>
+<body>
+  <div class="topbar">✨ Des douceurs préparées avec soin — Commandes personnalisées disponibles</div>
+
+  <header class="header">
+    <a class="brand" href="#accueil" aria-label="Nid Gourmand accueil">
+      <img src="assets/logo.png" alt="Nid Gourmand" id="headerLogo">
+    </a>
+    <nav class="nav" id="mainNav">
+      <a href="#accueil">Accueil</a>
+      <a href="#boutique">Boutique</a>
+      <a href="#a-propos">À propos</a>
+      <a href="#contact">Contact</a>
+    </nav>
+    <button class="cart-btn" id="openCart" aria-label="Ouvrir le panier">
+      🛒 <span>Panier</span> <b id="cartCount">0</b>
+    </button>
+    <button class="menu-btn" id="menuBtn" aria-label="Menu">☰</button>
+  </header>
+
+  <main>
+    <section class="hero" id="accueil">
+      <div class="hero-copy">
+        <span class="eyebrow">PÂTISSERIE • GOURMANDISE • SAVOIR-FAIRE</span>
+        <h1>Le goût du <em>bonheur</em>, à chaque bouchée.</h1>
+        <p>Découvrez nos pâtisseries, gâteaux et douceurs préparés avec passion pour vos petits plaisirs et vos grands événements.</p>
+        <div class="hero-actions">
+          <a class="btn primary" href="#boutique">Découvrir la boutique</a>
+          <a class="btn secondary" href="#contact">Nous contacter</a>
+        </div>
+        <div class="trust-row">
+          <span>✓ Préparé avec soin</span>
+          <span>✓ Commandes personnalisées</span>
+          <span>✓ Service chaleureux</span>
+        </div>
+      </div>
+      <div class="hero-art">
+        <div class="hero-card">
+          <img src="assets/logo.png" alt="Logo Nid Gourmand">
+          <div class="hero-card-caption">
+            <strong>Nid Gourmand</strong>
+            <span>Des créations qui font plaisir</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="features">
+      <article><span>🍰</span><div><b>Créations gourmandes</b><small>Pour tous vos moments</small></div></article>
+      <article><span>🎂</span><div><b>Gâteaux sur commande</b><small>Selon vos envies</small></div></article>
+      <article><span>💝</span><div><b>Pour vos événements</b><small>Anniversaires & célébrations</small></div></article>
+      <article><span>✨</span><div><b>Qualité & fraîcheur</b><small>Une attention à chaque détail</small></div></article>
+    </section>
+
+    <section class="shop section" id="boutique">
+      <div class="section-head">
+        <div>
+          <span class="eyebrow">NOTRE BOUTIQUE</span>
+          <h2>Nos gourmandises</h2>
+        </div>
+        <div class="shop-tools">
+          <label class="search"><span>⌕</span><input id="search" type="search" placeholder="Rechercher un produit..."></label>
+        </div>
+      </div>
+      <div class="filters" id="filters"></div>
+      <div class="products" id="products"></div>
+    </section>
+
+    <section class="about section" id="a-propos">
+      <div class="about-image"><img src="assets/logo.png" alt="Nid Gourmand"></div>
+      <div class="about-copy">
+        <span class="eyebrow">L'ESPRIT NID GOURMAND</span>
+        <h2>Une pâtisserie pensée pour créer de beaux souvenirs.</h2>
+        <p>Chez Nid Gourmand, chaque création est pensée pour être aussi belle que savoureuse. Notre boutique vous permet de choisir facilement vos douceurs et de préparer votre commande en quelques clics.</p>
+        <div class="about-points">
+          <div><b>01</b><span>Choisissez vos produits</span></div>
+          <div><b>02</b><span>Ajoutez-les au panier</span></div>
+          <div><b>03</b><span>Payez en ligne</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="cta">
+      <div>
+        <span class="eyebrow">UNE OCCASION SPÉCIALE ?</span>
+        <h2>Un gâteau personnalisé pour votre événement ?</h2>
+        <p>Anniversaire, mariage, fête ou réception : parlons de votre projet.</p>
+      </div>
+      <!-- BOUTON DEVIS → WhatsApp direct -->
+      <button class="btn light" onclick="ouvrirDevisWhatsApp()">Demander un devis</button>
+    </section>
+
+    <section class="contact section" id="contact">
+      <div>
+        <span class="eyebrow">CONTACT</span>
+        <h2>Passons votre commande</h2>
+        <p>Pour commander, utilisez le panier puis payez directement en ligne. Vous pouvez aussi nous écrire directement.</p>
+      </div>
+      <div class="contact-grid">
+        <div class="contact-card"><span>💬</span><b>WhatsApp</b><small id="contactWhatsapp">WhatsApp</small></div>
+        <div class="contact-card"><span>📍</span><b>Localisation</b><small id="contactAddress">Votre adresse / ville</small></div>
+        <div class="contact-card"><span>🕒</span><b>Horaires</b><small id="contactHours">Lun. – Sam. • 08h00 – 19h00</small></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-brand"><img src="assets/logo.png" alt="Nid Gourmand"><p id="footerDescription">Des douceurs qui racontent de beaux moments.</p></div>
+    <div><b>Boutique</b><a href="#boutique">Tous les produits</a><a href="#a-propos">À propos</a></div>
+    <div><b>Informations</b><a href="#contact">Contact</a><a href="admin.html">Administration</a></div>
+    <div><b>Paiement</b><p>MTN MoMo • Moov Money<br>Paiement sécurisé en ligne</p></div>
+    <div class="copyright">© <span id="year"></span> Nid Gourmand. Tous droits réservés.</div>
+  </footer>
+
+  <!-- PANIER -->
+  <aside class="cart-panel" id="cartPanel" aria-hidden="true">
+    <div class="cart-head"><h3>Votre panier</h3><button id="closeCart">✕</button></div>
+    <div class="cart-items" id="cartItems"></div>
+    <div class="cart-empty" id="cartEmpty">Votre panier est vide.<br><a href="#boutique" id="goShop">Découvrir les produits</a></div>
+    <div class="cart-foot">
+      <div class="checkout-form">
+        <div class="field"><label>Nom complet</label><input id="custName" placeholder="Votre nom et prénom" autocomplete="name"></div>
+        <div class="field"><label>Téléphone</label><input id="custPhone" type="tel" placeholder="Ex. 05 00 00 00 00" autocomplete="tel"></div>
+        <div class="field"><label>Comment récupérer votre commande ?</label>
+          <div class="delivery-choice">
+            <label><input type="radio" name="deliveryMethod" value="retrait" checked> Je viens récupérer</label>
+            <label><input type="radio" name="deliveryMethod" value="livraison"> Je veux être livré(e)</label>
+          </div>
+        </div>
+        <div class="field" id="addressField" style="display:none"><label>Adresse de livraison</label><input id="custAddress" placeholder="Quartier, repère..."></div>
+      </div>
+      <div class="total"><span>Total</span><strong id="cartTotal">0 FCFA</strong></div>
+
+      <!-- BOUTON PAYER → ouvre la modale de paiement -->
+      <button class="btn primary full" id="checkout">💳 Payer ma commande</button>
+      <p id="checkoutConfirm" class="checkout-confirm" style="display:none">✅ Paiement confirmé ! Votre commande a bien été enregistrée. Merci !</p>
+    </div>
+  </aside>
+  <div class="overlay" id="overlay"></div>
+
+  <!-- ═══════════════════════════════════════════
+       MODALE DE PAIEMENT PAYDUNYA
+  ═══════════════════════════════════════════ -->
+  <div id="pay-overlay">
+    <div id="pay-modal">
+      <button id="pay-close">✕</button>
+
+      <!-- En-tête -->
+      <div class="pay-header">
+        <span class="pay-icon">💳</span>
+        <h2>Mode de paiement</h2>
+        <p class="pay-amount" id="pay-amount-display"></p>
+      </div>
+
+      <!-- Étape 1 : choisir MTN ou Moov -->
+      <div id="pay-step-methods">
+        <div class="pay-methods">
+          <button class="pay-method-btn" data-channel="MTN_MONEY" data-name="MTN MoMo">
+            <span class="m-logo">📱</span>
+            <span class="m-name">MTN MoMo</span>
+            <span class="m-desc">Mobile Money MTN</span>
+          </button>
+          <button class="pay-method-btn" data-channel="MOOV_MONEY" data-name="Moov Money">
+            <span class="m-logo">📲</span>
+            <span class="m-name">Moov Money</span>
+            <span class="m-desc">Mobile Money Moov</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Étape 2 : saisir le numéro -->
+      <div id="pay-form">
+        <div id="pay-badge-container"></div>
+        <label for="pay-phone">Votre numéro Mobile Money</label>
+        <input id="pay-phone" type="tel" placeholder="Ex : 0501234567" maxlength="10" inputmode="numeric">
+        <p class="pay-hint">Entrez le numéro lié à votre compte Mobile Money</p>
+        <button id="pay-confirm-btn">
+          <span id="pay-btn-text">Payer maintenant</span>
+          <span id="pay-btn-loader" style="display:none">⏳ En cours…</span>
+        </button>
+        <button id="pay-back-btn">← Changer de mode</button>
+      </div>
+
+      <!-- Chargement -->
+      <div id="pay-loader">
+        <div class="spinner"></div>
+        <p>Connexion au service de paiement…</p>
+      </div>
+
+      <!-- Succès -->
+      <div id="pay-success">
+        <div class="s-icon">✅</div>
+        <h3>Paiement reçu !</h3>
+        <p>Votre commande a été enregistrée.</p>
+        <p id="pay-order-ref"></p>
+        <small id="pay-success-ref"></small>
+        <br>
+        <button id="pay-success-close">Fermer</button>
+      </div>
+
+      <!-- Erreur -->
+      <div id="pay-error">
+        <div class="e-icon">❌</div>
+        <h3>Paiement échoué</h3>
+        <p id="pay-error-msg"></p>
+        <button id="pay-error-retry">Réessayer</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/12.16.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

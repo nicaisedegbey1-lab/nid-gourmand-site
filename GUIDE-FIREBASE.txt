@@ -1,0 +1,132 @@
+NID GOURMAND — GUIDE DE CONNEXION À FIREBASE
+==============================================
+
+Ce guide te fait passer d'un site "local" (localStorage) à un site
+"connecté" : tout ce que tu modifies dans Administration devient
+visible immédiatement chez TOUS tes clients, sur tous les appareils.
+
+C'est gratuit (aucune carte bancaire nécessaire) et prend environ
+10-15 minutes la première fois.
+
+------------------------------------------------
+ÉTAPE 1 — Créer le projet Firebase
+------------------------------------------------
+1. Va sur https://console.firebase.google.com
+2. Connecte-toi avec un compte Google (crée-en un si besoin)
+3. Clique "Ajouter un projet"
+4. Donne-lui un nom, ex. "nid-gourmand"
+5. Tu peux désactiver Google Analytics (pas nécessaire) puis "Créer le projet"
+
+------------------------------------------------
+ÉTAPE 2 — Activer Firestore (la base de données)
+------------------------------------------------
+1. Dans le menu de gauche : Build → Firestore Database
+2. Clique "Créer une base de données"
+3. Choisis une région proche de toi (ex. eur3 / europe-west) — ce choix est définitif
+4. Démarre en "Mode production"
+5. Une fois créée, va dans l'onglet "Règles" et remplace le contenu par :
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /products/{productId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    match /settings/{settingId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    match /orders/{orderId} {
+      allow create: if true;
+      allow read, update, delete: if request.auth != null;
+    }
+    match /stats/{statId} {
+      allow read, write: if true;
+    }
+  }
+}
+
+(La collection "stats" ne stocke qu'un compteur de visites, sans donnée
+sensible — elle reste ouverte en écriture pour permettre le comptage
+depuis la boutique, sans passer par un compte.)
+
+6. Clique "Publier"
+
+(Ces règles veulent dire : tout le monde peut LIRE le catalogue,
+mais seule une personne connectée — toi — peut ÉCRIRE dedans.)
+
+------------------------------------------------
+ÉTAPE 3 — Activer l'authentification (ton compte admin)
+------------------------------------------------
+1. Menu de gauche : Build → Authentication
+2. Clique "Commencer" / "Get started"
+3. Choisis le fournisseur "E-mail/Mot de passe" → active-le → Enregistrer
+4. Onglet "Users" → "Add user"
+5. Renseigne l'email et le mot de passe avec lesquels TU te connecteras
+   à admin.html (ce n'est plus le mot de passe "nidgourmand" du départ)
+
+------------------------------------------------
+ÉTAPE 4 — Récupérer la configuration et l'ajouter au site
+------------------------------------------------
+1. Clique la roue crantée ⚙️ en haut à gauche → "Paramètres du projet"
+2. Section "Vos applications" → clique l'icône Web "</>"
+3. Donne un surnom (ex. "nid-gourmand-web") → "Enregistrer l'application"
+4. Firebase affiche un bloc "firebaseConfig = { apiKey: ... }"
+5. Ouvre le fichier firebase-config.js (dans le dossier du site) et
+   remplace les valeurs par celles affichées par Firebase
+
+------------------------------------------------
+ÉTAPE 5 — Mettre le site en ligne
+------------------------------------------------
+1. Va sur https://app.netlify.com/drop
+2. Glisse-déposes tout le dossier (ou le zip) du site
+3. Tu obtiens un lien du type votresite.netlify.app
+4. Va sur votresite.netlify.app/admin.html, connecte-toi avec l'email/
+   mot de passe de l'étape 3
+5. Clique "Importer le catalogue de démo" pour remplir la boutique
+   avec les 10 produits de départ, puis modifie/ajoute ce que tu veux
+
+À partir de maintenant : toute modification (prix, stock, photo,
+description) que tu fais dans Administration — depuis n'importe quel
+appareil connecté avec ton compte admin — est visible instantanément
+par tous tes clients, sur leur téléphone, sans qu'ils aient besoin de
+rafraîchir la page.
+
+------------------------------------------------
+GESTION DU STOCK
+------------------------------------------------
+Chaque produit a un champ "stock" (quantité). Quand il atteint 0,
+le produit disparaît automatiquement de la boutique. Il te suffit de
+remettre un nombre dans Administration pour qu'il réapparaisse.
+
+Important : le stock ne se déduit pas tout seul à chaque commande
+(les commandes partent par WhatsApp, pas par un vrai système de
+caisse), donc c'est à toi de mettre à jour la quantité quand tu sais
+qu'un produit est épuisé pour la journée.
+
+------------------------------------------------
+BESOIN D'AIDE ?
+------------------------------------------------
+Si une étape bloque (message d'erreur, page blanche, etc.), donne le
+message exact affiché et je t'aiderai à le résoudre.
+
+------------------------------------------------
+NOUVEAU : PANIER, VENTES, ANALYTIQUES
+------------------------------------------------
+- Le panier demande maintenant le nom, le téléphone, et si le client
+  vient récupérer ou veut être livré (avec adresse). Ces infos sont
+  ajoutées automatiquement au message WhatsApp.
+- Chaque commande envoyée est aussi enregistrée dans Firestore (collection
+  "orders") : ça sert aux sections "Ventes" et "Analytiques" de l'admin.
+- "Ventes" classe les produits du plus au moins commandé.
+- "Analytiques" affiche le nombre total de visites de la boutique et
+  le nombre de commandes envoyées par jour / semaine / mois.
+- Un bandeau d'alerte apparaît en haut de l'admin si un produit passe
+  sous le seuil de stock que tu définis dans les réglages (5 par défaut).
+
+Important : la confirmation de commande est affichée sur le site
+juste après l'envoi ("✅ Merci ! Ouvrez WhatsApp..."). Ce n'est pas
+WhatsApp qui répond automatiquement — une vraie réponse automatique
+demanderait l'API WhatsApp Business officielle (projet séparé, avec
+vérification d'entreprise), pas le simple lien wa.me utilisé ici.
